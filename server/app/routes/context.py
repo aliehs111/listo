@@ -36,6 +36,18 @@ def create_context_item(
     return item
 
 
+@router.delete("/api/context/{context_item_id}", status_code=204)
+def delete_context_item(
+    context_item_id: UUID,
+    db: Session = Depends(get_db),
+):
+    item = db.query(models.ContextItem).filter(models.ContextItem.id == context_item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Context item not found")
+    db.delete(item)
+    db.commit()
+
+
 @router.patch("/api/context/{context_item_id}", response_model=schemas.ContextItemRead)
 def update_context_item(
     context_item_id: UUID,

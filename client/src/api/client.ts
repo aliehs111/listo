@@ -64,6 +64,8 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
+  deleteContextItem: (itemId: string) =>
+    request<void>(`/api/context/${itemId}`, { method: 'DELETE' }),
 
   // Chat
   ask: (data: unknown) =>

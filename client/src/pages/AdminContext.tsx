@@ -50,7 +50,12 @@ export default function AdminContext() {
     setEditForm({ category: item.category, title: item.title, content_original: item.content_original })
   }
 
-  const cancelEdit = () => {
+  const cancelEdit = () => setEditingId(null)
+
+  const handleDelete = async (item: ContextItem) => {
+    if (!confirm(`Delete "${item.title}"? This cannot be undone.`)) return
+    await api.deleteContextItem(item.id)
+    setItems(prev => prev.filter(i => i.id !== item.id))
     setEditingId(null)
   }
 
@@ -151,6 +156,12 @@ export default function AdminContext() {
                     className="flex-1 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-500"
                   >
                     Cancel
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item)}
+                    className="py-2 px-4 rounded-lg text-sm font-medium border border-red-200 text-red-500 hover:bg-red-50"
+                  >
+                    Delete
                   </button>
                 </div>
               </div>
