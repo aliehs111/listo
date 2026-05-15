@@ -8,11 +8,19 @@ const CATEGORIES = [
   'restricted_areas', 'lifts_hoists', 'contacts', 'safety_rules',
 ]
 
+interface EditForm {
+  category: string
+  title: string
+  content_original: string
+}
+
 export default function AdminContext() {
   const { id } = useParams<{ id: string }>()
   const [items, setItems] = useState<ContextItem[]>([])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ category: 'parking', title: '', content_original: '', is_active: false })
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<EditForm>({ category: '', title: '', content_original: '' })
 
   useEffect(() => {
     if (id) api.listContext(id, true).then(setItems)
@@ -35,6 +43,21 @@ export default function AdminContext() {
   const handleUnpublish = async (item: ContextItem) => {
     const updated = await api.updateContextItem(item.id, { is_active: false, status: 'draft' })
     setItems(prev => prev.map(i => i.id === item.id ? updated : i))
+  }
+
+  const startEdit = (item: ContextItem) => {
+    setEditingId(item.id)
+    setEditForm({ category: item.category, title: item.title, content_original: item.content_original })
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+  }
+
+  const handleSaveEdit = async (item: ContextItem) => {
+    const updated = await api.updateContextItem(item.id, editForm)
+    setItems(prev => prev.map(i => i.id === item.id ? updated : i))
+    setEditingId(null)
   }
 
   return (
@@ -95,34 +118,77 @@ export default function AdminContext() {
       <div className="flex flex-col gap-3">
         {items.map(item => (
           <div key={item.id} className="bg-white border border-gray-200 rounded-xl px-5 py-4">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="font-medium text-gray-900">{item.title}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{item.category.replace(/_/g, ' ')}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-xs px-2 py-0.5 rounded-full ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                  {item.status}
-                </span>
-                {!item.is_active ? (
+            {editingId === item.id ? (
+              <div className="flex flex-col gap-3">
+                <select
+                  value={editForm.category}
+                  onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                >
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>)}
+                </select>
+                <input
+                  value={editForm.title}
+                  onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                />
+                <textarea
+                  value={editForm.content_original}
+                  onChange={e => setEditForm(f => ({ ...f, content_original: e.target.value }))}
+                  rows={4}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none"
+                />
+                <div className="flex gap-2">
                   <button
-                    onClick={() => handlePublish(item)}
-                    className="text-xs px-3 py-1 rounded-lg"
+                    onClick={() => handleSaveEdit(item)}
+                    className="flex-1 py-2 rounded-lg text-sm font-medium"
                     style={{ backgroundColor: '#c8f135', color: '#1a1a1a' }}
                   >
-                    Publish
+                    Save
                   </button>
-                ) : (
                   <button
-                    onClick={() => handleUnpublish(item)}
-                    className="text-xs px-3 py-1 rounded-lg border border-gray-200 text-gray-500"
+                    onClick={cancelEdit}
+                    className="flex-1 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-500"
                   >
-                    Unpublish
+                    Cancel
                   </button>
-                )}
+                </div>
               </div>
-            </div>
-            <p className="text-sm text-gray-600 mt-2 leading-relaxed">{item.content_original}</p>
+            ) : (
+              <>
+                <div className="flex items-start justify-between gap-2">
+                  <button
+                    onClick={() => startEdit(item)}
+                    className="text-left flex-1"
+                  >
+                    <p className="font-medium text-gray-900">{item.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{item.category.replace(/_/g, ' ')}</p>
+                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                      {item.status}
+                    </span>
+                    {!item.is_active ? (
+                      <button
+                        onClick={() => handlePublish(item)}
+                        className="text-xs px-3 py-1 rounded-lg"
+                        style={{ backgroundColor: '#c8f135', color: '#1a1a1a' }}
+                      >
+                        Publish
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleUnpublish(item)}
+                        className="text-xs px-3 py-1 rounded-lg border border-gray-200 text-gray-500"
+                      >
+                        Unpublish
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mt-2 leading-relaxed">{item.content_original}</p>
+              </>
+            )}
           </div>
         ))}
         {items.length === 0 && <p className="text-gray-400 text-sm">No context items yet.</p>}
