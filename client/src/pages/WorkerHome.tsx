@@ -36,7 +36,7 @@ export default function WorkerHome() {
 
   useEffect(() => { load() }, [load])
 
-  const handleQuickAction = (action: string) => {
+  const handleQuickAction = (_action: string) => {
     // Prefill AskListoBox with the quick action as a question
     // For now we just scroll to the ask box — full implementation in next milestone
     const el = document.getElementById('ask-box')
