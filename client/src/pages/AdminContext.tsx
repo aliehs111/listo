@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { api } from '../api/client'
 import type { ContextItem } from '../types'
 
@@ -18,7 +18,7 @@ export default function AdminContext() {
     if (id) api.listContext(id).then(setItems)
   }, [id])
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = async (e: { preventDefault: () => void }) => {
     e.preventDefault()
     if (!id) return
     const item = await api.createContextItem(id, { ...form, status: form.is_active ? 'active' : 'draft' })
@@ -29,6 +29,10 @@ export default function AdminContext() {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
+      <Link to="/admin/projects" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-6">
+        ← Projects
+      </Link>
+
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-gray-900">Context Items</h1>
         <button

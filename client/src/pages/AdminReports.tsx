@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { api } from '../api/client'
 import type { IssueReport } from '../types'
 
@@ -13,7 +13,12 @@ export default function AdminReports() {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
+      <Link to="/admin/projects" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-6">
+        ← Projects
+      </Link>
+
       <h1 className="text-xl font-semibold text-gray-900 mb-6">Issue Reports</h1>
+
       <div className="flex flex-col gap-3">
         {reports.map(r => (
           <div key={r.id} className="bg-white border border-gray-200 rounded-xl px-5 py-4">

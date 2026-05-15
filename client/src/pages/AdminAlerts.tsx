@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { api } from '../api/client'
 import type { Alert } from '../types'
 
@@ -21,13 +21,18 @@ export default function AdminAlerts() {
     if (id) api.activeAlerts(id).then(setAlerts)
   }, [id])
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const submitAlert = async (statusOverride?: string) => {
     if (!id) return
-    const alert = await api.createAlert(id, form)
+    const data = statusOverride ? { ...form, status: statusOverride } : form
+    const alert = await api.createAlert(id, data)
     setAlerts(prev => [alert, ...prev])
     setShowForm(false)
     setForm({ title: '', message_original: '', severity: 'operational', requires_acknowledgement: false, status: 'draft' })
+  }
+
+  const handleCreate = (e: { preventDefault: () => void }) => {
+    e.preventDefault()
+    submitAlert()
   }
 
   const handlePublish = async (alertId: string) => {
@@ -37,6 +42,10 @@ export default function AdminAlerts() {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
+      <Link to="/admin/projects" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-6">
+        ← Projects
+      </Link>
+
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-gray-900">Alerts</h1>
         <button
@@ -89,7 +98,7 @@ export default function AdminAlerts() {
             </button>
             <button
               type="button"
-              onClick={async e => { setForm(f => ({ ...f, status: 'active' })); await handleCreate(e as unknown as React.FormEvent) }}
+              onClick={() => submitAlert('active')}
               className="flex-1 py-2 rounded-lg text-sm font-medium"
               style={{ backgroundColor: '#c8f135', color: '#1a1a1a' }}
             >
