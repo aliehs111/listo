@@ -62,6 +62,18 @@ def update_alert(
     return alert
 
 
+def _get_or_create_device_session(device_session_id, db: Session):
+    if not device_session_id:
+        return None
+    existing = db.query(models.DeviceSession).filter(models.DeviceSession.id == device_session_id).first()
+    if not existing:
+        from app.models import DeviceSession
+        ds = DeviceSession(id=device_session_id, device_session_token=str(device_session_id))
+        db.add(ds)
+        db.flush()
+    return device_session_id
+
+
 @router.post("/api/alerts/{alert_id}/acknowledge", status_code=201)
 def acknowledge_alert(
     alert_id: UUID,
@@ -71,10 +83,13 @@ def acknowledge_alert(
     alert = db.query(models.Alert).filter(models.Alert.id == alert_id).first()
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
+    device_session_id = _get_or_create_device_session(payload.device_session_id, db)
+    data = payload.model_dump()
+    data["device_session_id"] = device_session_id
     ack = models.AlertAcknowledgement(
         project_id=alert.project_id,
         alert_id=alert_id,
-        **payload.model_dump(),
+        **data,
     )
     db.add(ack)
     db.commit()

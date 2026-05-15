@@ -1,5 +1,5 @@
 import time
-import uuid
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -19,6 +19,20 @@ IN_SCOPE_INTENTS = {
 }
 
 
+def _get_or_create_device_session(device_session_id: UUID | None, db: Session) -> UUID | None:
+    if not device_session_id:
+        return None
+    existing = db.query(models.DeviceSession).filter(models.DeviceSession.id == device_session_id).first()
+    if not existing:
+        ds = models.DeviceSession(
+            id=device_session_id,
+            device_session_token=str(device_session_id),
+        )
+        db.add(ds)
+        db.flush()
+    return device_session_id
+
+
 def _classify_scope(question: str) -> tuple[str, float]:
     q = question.lower()
     for intent in IN_SCOPE_INTENTS:
@@ -35,6 +49,8 @@ def ask_listo(payload: schemas.ChatRequest, db: Session = Depends(get_db)):
 
     start = time.time()
 
+    device_session_id = _get_or_create_device_session(payload.device_session_id, db)
+
     # Get or create chat session
     session_id = payload.chat_session_id
     if session_id:
@@ -46,7 +62,7 @@ def ask_listo(payload: schemas.ChatRequest, db: Session = Depends(get_db)):
         session = models.ChatSession(
             project_id=payload.project_id,
             user_id=payload.user_id,
-            device_session_id=payload.device_session_id,
+            device_session_id=device_session_id,
             preferred_language=payload.preferred_language,
             trade_company=payload.trade_company,
             role_label=payload.role_label,
@@ -70,7 +86,7 @@ def ask_listo(payload: schemas.ChatRequest, db: Session = Depends(get_db)):
         project_id=payload.project_id,
         chat_session_id=session.id,
         user_id=payload.user_id,
-        device_session_id=payload.device_session_id,
+        device_session_id=device_session_id,
         trade_company=payload.trade_company,
         role_label=payload.role_label,
         original_language=payload.preferred_language,
