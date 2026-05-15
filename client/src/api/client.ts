@@ -52,8 +52,8 @@ export const api = {
     }),
 
   // Context
-  listContext: (projectId: string) =>
-    request<import('../types').ContextItem[]>(`/api/projects/${projectId}/context`),
+  listContext: (projectId: string, includeDrafts = false) =>
+    request<import('../types').ContextItem[]>(`/api/projects/${projectId}/context${includeDrafts ? '?include_drafts=true' : ''}`),
   createContextItem: (projectId: string, data: unknown) =>
     request<import('../types').ContextItem>(`/api/projects/${projectId}/context`, {
       method: 'POST',

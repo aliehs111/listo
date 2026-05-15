@@ -15,7 +15,7 @@ export default function AdminContext() {
   const [form, setForm] = useState({ category: 'parking', title: '', content_original: '', is_active: false })
 
   useEffect(() => {
-    if (id) api.listContext(id).then(setItems)
+    if (id) api.listContext(id, true).then(setItems)
   }, [id])
 
   const handleCreate = async (e: { preventDefault: () => void }) => {
@@ -25,6 +25,16 @@ export default function AdminContext() {
     setItems(prev => [item, ...prev])
     setShowForm(false)
     setForm({ category: 'parking', title: '', content_original: '', is_active: false })
+  }
+
+  const handlePublish = async (item: ContextItem) => {
+    const updated = await api.updateContextItem(item.id, { is_active: true, status: 'active' })
+    setItems(prev => prev.map(i => i.id === item.id ? updated : i))
+  }
+
+  const handleUnpublish = async (item: ContextItem) => {
+    const updated = await api.updateContextItem(item.id, { is_active: false, status: 'draft' })
+    setItems(prev => prev.map(i => i.id === item.id ? updated : i))
   }
 
   return (
@@ -90,9 +100,27 @@ export default function AdminContext() {
                 <p className="font-medium text-gray-900">{item.title}</p>
                 <p className="text-xs text-gray-400 mt-0.5">{item.category.replace(/_/g, ' ')}</p>
               </div>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                {item.status}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs px-2 py-0.5 rounded-full ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                  {item.status}
+                </span>
+                {!item.is_active ? (
+                  <button
+                    onClick={() => handlePublish(item)}
+                    className="text-xs px-3 py-1 rounded-lg"
+                    style={{ backgroundColor: '#c8f135', color: '#1a1a1a' }}
+                  >
+                    Publish
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleUnpublish(item)}
+                    className="text-xs px-3 py-1 rounded-lg border border-gray-200 text-gray-500"
+                  >
+                    Unpublish
+                  </button>
+                )}
+              </div>
             </div>
             <p className="text-sm text-gray-600 mt-2 leading-relaxed">{item.content_original}</p>
           </div>

@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -9,16 +9,15 @@ router = APIRouter(tags=["context"])
 
 
 @router.get("/api/projects/{project_id}/context", response_model=list[schemas.ContextItemRead])
-def list_context(project_id: UUID, db: Session = Depends(get_db)):
-    return (
-        db.query(models.ContextItem)
-        .filter(
-            models.ContextItem.project_id == project_id,
-            models.ContextItem.is_active == True,
-        )
-        .order_by(models.ContextItem.priority.desc())
-        .all()
-    )
+def list_context(
+    project_id: UUID,
+    include_drafts: bool = Query(False),
+    db: Session = Depends(get_db),
+):
+    q = db.query(models.ContextItem).filter(models.ContextItem.project_id == project_id)
+    if not include_drafts:
+        q = q.filter(models.ContextItem.is_active == True)
+    return q.order_by(models.ContextItem.priority.desc()).all()
 
 
 @router.post("/api/projects/{project_id}/context", response_model=schemas.ContextItemRead, status_code=201)
